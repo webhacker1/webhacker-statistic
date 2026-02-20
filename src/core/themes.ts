@@ -19,6 +19,15 @@ function readCssVariable(variableName: string, fallbackValue: string): string {
     return rawValue || fallbackValue;
 }
 
+function readCssVariables(variableNames: string[], fallbackValue: string): string {
+    for (let index = 0; index < variableNames.length; index += 1) {
+        const variableName = variableNames[index];
+        const rawValue = getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
+        if (rawValue) return rawValue;
+    }
+    return fallbackValue;
+}
+
 export function toTransparent(color: string, alpha = 0.2): string {
     if (color.startsWith("#") && color.length === 7) {
         const red = Number.parseInt(color.slice(1, 3), 16);
@@ -36,13 +45,22 @@ export function toTransparent(color: string, alpha = 0.2): string {
 
 export function resolveTheme(): ResolvedTheme {
     return {
-        panelBackground: readCssVariable(
-            THEME_VARIABLES.panelBackground,
+        panelBackground: readCssVariables(
+            [THEME_VARIABLES.panelBackground, "--background-color", "--surface-color"],
             DEFAULT_THEME_VALUES.panelBackground
         ),
-        panelBorder: readCssVariable(THEME_VARIABLES.panelBorder, DEFAULT_THEME_VALUES.panelBorder),
-        textPrimary: readCssVariable(THEME_VARIABLES.textPrimary, DEFAULT_THEME_VALUES.textPrimary),
-        textSecondary: readCssVariable(THEME_VARIABLES.textSecondary, DEFAULT_THEME_VALUES.textSecondary),
+        panelBorder: readCssVariables(
+            [THEME_VARIABLES.panelBorder, "--border-color"],
+            DEFAULT_THEME_VALUES.panelBorder
+        ),
+        textPrimary: readCssVariables(
+            [THEME_VARIABLES.textPrimary, "--text-color", "--color-text"],
+            DEFAULT_THEME_VALUES.textPrimary
+        ),
+        textSecondary: readCssVariables(
+            [THEME_VARIABLES.textSecondary, "--muted-text-color", "--color-text-secondary"],
+            DEFAULT_THEME_VALUES.textSecondary
+        ),
         lineJoin: readCssVariable(THEME_VARIABLES.lineJoin, DEFAULT_THEME_VALUES.lineJoin),
         lineLeave: readCssVariable(THEME_VARIABLES.lineLeave, DEFAULT_THEME_VALUES.lineLeave),
         success: readCssVariable(THEME_VARIABLES.success, DEFAULT_THEME_VALUES.success),

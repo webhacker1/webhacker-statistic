@@ -65,8 +65,11 @@ export function showCanvasTooltip(
     if (!tooltipElement) return;
 
     tooltipElement.innerHTML = htmlContent;
-    tooltipElement.style.left = `${x}px`;
-    tooltipElement.style.top = `${y}px`;
+    const parentElement = canvasElement.parentElement;
+    const maxWidth = parentElement ? parentElement.clientWidth : 0;
+    const clampedX = maxWidth ? Math.max(10, Math.min(x, maxWidth - 10)) : x;
+    tooltipElement.style.left = `${clampedX}px`;
+    tooltipElement.style.top = `${Math.max(10, y)}px`;
     tooltipElement.style.opacity = "1";
 }
 

@@ -128,7 +128,12 @@ function drawLineChart(canvasElement: HTMLCanvasElement): void {
     context.fillStyle = state.theme.textSecondary;
     context.font = '12px "Segoe UI", sans-serif';
     context.textAlign = "center";
+    const maxVisibleLabels = Math.max(2, Math.floor(chartWidth / 62));
+    const labelStep = Math.max(1, Math.ceil(state.labels.length / maxVisibleLabels));
     state.labels.forEach((label, index) => {
+        const isLast = index === state.labels.length - 1;
+        const shouldRender = index % labelStep === 0 || isLast;
+        if (!shouldRender) return;
         context.fillText(label, left + stepX * index, height - 12);
     });
 

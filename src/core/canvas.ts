@@ -10,7 +10,8 @@ export function resizeCanvas(canvasElement: HTMLCanvasElement, minimalHeight = 2
 
     const pixelRatio = window.devicePixelRatio || 1;
     const width = Math.max(280, Math.floor(canvasElement.clientWidth));
-    const height = Math.max(minimalHeight, Math.floor(canvasElement.clientHeight));
+    const rawHeight = Math.floor(canvasElement.clientHeight);
+    const height = Math.min(460, Math.max(minimalHeight, Number.isFinite(rawHeight) ? rawHeight : minimalHeight));
 
     canvasElement.width = Math.floor(width * pixelRatio);
     canvasElement.height = Math.floor(height * pixelRatio);
