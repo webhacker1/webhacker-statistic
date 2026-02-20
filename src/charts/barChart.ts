@@ -24,6 +24,8 @@ type BarState = {
     bars: BarMeta[];
     valueLabel: string;
     legendEnabled: boolean;
+    chartTop: number;
+    chartBottom: number;
 };
 
 const STATE_BY_CANVAS = new WeakMap<HTMLCanvasElement, BarState>();
@@ -48,6 +50,8 @@ function drawBarChart(canvasElement: HTMLCanvasElement): void {
     const bottom = 38;
     const chartWidth = width - left - right;
     const chartHeight = height - top - bottom;
+    state.chartTop = top;
+    state.chartBottom = top + chartHeight;
     const maximumValue =
         Math.max(...state.values.map((_, index) => getVisibleBarValue(state, index)), 1) || 1;
     const barWidth = Math.min(64, chartWidth / Math.max(state.values.length * 2, 1));
@@ -157,7 +161,9 @@ function getHoveredBarIndex(canvasElement: HTMLCanvasElement, x: number, y: numb
 
     for (let index = 0; index < state.bars.length; index += 1) {
         const bar = state.bars[index];
-        if (x >= bar.x && x <= bar.x + bar.width && y >= bar.y && y <= bar.y + bar.height) {
+        const horizontalMatch = x >= bar.x - 6 && x <= bar.x + bar.width + 6;
+        const verticalMatch = y >= state.chartTop && y <= state.chartBottom;
+        if (horizontalMatch && verticalMatch) {
             if ((state.visibility[bar.index] ?? 1) > 0.05) return bar.index;
             return null;
         }
@@ -236,7 +242,9 @@ export function renderBarChart(
         initialized: previousState?.initialized ?? false,
         bars: [],
         valueLabel: options?.valueLabel || "Value",
-        legendEnabled: options?.enableLegend !== false
+        legendEnabled: options?.enableLegend !== false,
+        chartTop: 0,
+        chartBottom: 0
     };
 
     STATE_BY_CANVAS.set(canvasElement, state);

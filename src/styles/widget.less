@@ -1,5 +1,4 @@
-﻿.statistics-widget-root,
-:root {
+﻿.statistics-widget-root {
     --statistics-panel-background: var(--background-color, #ffffff);
     --statistics-panel-border: var(--border-color, #dbe7f5);
     --statistics-text-primary: var(--text-color, #1d3048);
@@ -14,10 +13,19 @@
 }
 
 .period-selector .chip {
-    border: 1px solid color-mix(in srgb, var(--statistics-panel-border, #dbe7f5) 80%, #9fc2ea 20%);
+    border: 1px solid
+        color-mix(
+            in srgb,
+            var(--statistics-panel-border, var(--border-color, #dbe7f5)) 80%,
+            #9fc2ea 20%
+        );
     border-radius: 999px;
-    background: color-mix(in srgb, var(--statistics-panel-background, #ffffff) 92%, #f6faff 8%);
-    color: var(--statistics-text-secondary, #35506f);
+    background: color-mix(
+        in srgb,
+        var(--statistics-panel-background, var(--background-color, #ffffff)) 92%,
+        #f6faff 8%
+    );
+    color: var(--statistics-text-secondary, var(--muted-text-color, #35506f));
     padding: 7px 14px;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -32,7 +40,11 @@
 .period-selector .chip.active {
     border-color: #2d93df;
     color: #2d93df;
-    background: color-mix(in srgb, var(--statistics-panel-background, #ffffff) 88%, #edf7ff 12%);
+    background: color-mix(
+        in srgb,
+        var(--statistics-panel-background, var(--background-color, #ffffff)) 88%,
+        #edf7ff 12%
+    );
 }
 
 .grid {
@@ -44,8 +56,8 @@
 .card {
     position: relative;
     overflow: hidden;
-    background: var(--statistics-panel-background, #ffffff);
-    border: 1px solid var(--statistics-panel-border, #dbe7f5);
+    background: var(--statistics-panel-background, var(--background-color, #ffffff));
+    border: 1px solid var(--statistics-panel-border, var(--border-color, #dbe7f5));
     border-radius: 16px;
     padding: 14px;
     box-shadow: 0 10px 28px rgba(21, 42, 70, 0.08);
@@ -67,7 +79,7 @@
 
 .card h3 {
     margin: 0 0 12px;
-    color: var(--statistics-text-primary, #1d3048);
+    color: var(--statistics-text-primary, var(--text-color, #1d3048));
     font-size: 16px;
     font-weight: 700;
     position: relative;
@@ -97,14 +109,23 @@ canvas {
     max-width: 260px;
     padding: 8px 10px;
     border-radius: 12px;
-    border: 1px solid color-mix(in srgb, var(--statistics-panel-border, #dbe7f5) 78%, #2d9cdb 22%);
-    background: color-mix(in srgb, var(--statistics-panel-background, #ffffff) 92%, #ffffff 8%);
+    border: 1px solid
+        color-mix(
+            in srgb,
+            var(--statistics-panel-border, var(--border-color, #dbe7f5)) 78%,
+            #2d9cdb 22%
+        );
+    background: color-mix(
+        in srgb,
+        var(--statistics-panel-background, var(--background-color, #ffffff)) 92%,
+        #ffffff 8%
+    );
     box-shadow: 0 16px 36px rgba(21, 42, 70, 0.18);
     backdrop-filter: blur(7px);
     transform: translateY(-100%);
     pointer-events: none;
     transition: opacity 120ms ease;
-    color: var(--statistics-text-primary, #1d3048);
+    color: var(--statistics-text-primary, var(--text-color, #1d3048));
 }
 
 .statistics-tooltip__title {
@@ -121,7 +142,7 @@ canvas {
     gap: 10px;
     margin: 3px 0;
     font-size: 12px;
-    color: var(--statistics-text-secondary, #56708f);
+    color: var(--statistics-text-secondary, var(--muted-text-color, #56708f));
 }
 
 .statistics-tooltip__row span {
@@ -139,7 +160,7 @@ canvas {
 }
 
 .statistics-tooltip__row strong {
-    color: var(--statistics-text-primary, #1d3048);
+    color: var(--statistics-text-primary, var(--text-color, #1d3048));
     font-weight: 700;
 }
 
@@ -155,10 +176,14 @@ canvas {
 
 .statistics-legend__item {
     border: 1px solid rgba(45, 156, 219, 0.24);
-    background: color-mix(in srgb, var(--statistics-panel-background, #ffffff) 92%, #ffffff 8%);
+    background: color-mix(
+        in srgb,
+        var(--statistics-panel-background, var(--background-color, #ffffff)) 92%,
+        #ffffff 8%
+    );
     border-radius: 999px;
     padding: 6px 11px;
-    color: var(--statistics-text-primary, #1d3048);
+    color: var(--statistics-text-primary, var(--text-color, #1d3048));
     display: inline-flex;
     align-items: center;
     gap: 7px;
@@ -175,7 +200,11 @@ canvas {
 
 .statistics-legend__item:hover {
     transform: translateY(-1px);
-    background: color-mix(in srgb, var(--statistics-panel-background, #ffffff) 86%, #ffffff 14%);
+    background: color-mix(
+        in srgb,
+        var(--statistics-panel-background, var(--background-color, #ffffff)) 86%,
+        #ffffff 14%
+    );
     box-shadow: 0 9px 18px rgba(21, 42, 70, 0.12);
 }
 

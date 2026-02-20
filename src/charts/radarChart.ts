@@ -22,6 +22,7 @@ type RadarState = {
     initialized: boolean;
     points: RadarPointMeta[];
     valueLabel: string;
+    noDataLabel: string;
 };
 
 const STATE_BY_CANVAS = new WeakMap<HTMLCanvasElement, RadarState>();
@@ -36,7 +37,8 @@ function drawRadarChart(canvasElement: HTMLCanvasElement): void {
     clearCanvas(context, width, height, state.theme.panelBackground);
 
     const count = Math.max(state.labels.length, 3);
-    const maximumValue = Math.max(...state.values, 1);
+    const maximumRawValue = Math.max(...state.values, 0);
+    const maximumValue = Math.max(maximumRawValue, 1);
     const centerX = width / 2;
     const centerY = height / 2;
     const radius = Math.min(width, height) * 0.32;
@@ -55,6 +57,16 @@ function drawRadarChart(canvasElement: HTMLCanvasElement): void {
         }
         context.closePath();
         context.stroke();
+    }
+
+    if (maximumRawValue <= 0) {
+        context.fillStyle = toTransparent(state.theme.textSecondary, 0.8);
+        context.font = '14px "Segoe UI", sans-serif';
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.fillText(state.noDataLabel, centerX, centerY);
+        state.points = [];
+        return;
     }
 
     context.beginPath();
@@ -182,6 +194,7 @@ export function renderRadarChart(
     theme: ResolvedTheme,
     options?: {
         valueLabel?: string;
+        noDataLabel?: string;
     }
 ): void {
     const previousState = STATE_BY_CANVAS.get(canvasElement);
@@ -195,7 +208,8 @@ export function renderRadarChart(
         hoverIndex: previousState?.hoverIndex ?? null,
         initialized: previousState?.initialized ?? false,
         points: [],
-        valueLabel: options?.valueLabel || "Value"
+        valueLabel: options?.valueLabel || "Value",
+        noDataLabel: options?.noDataLabel || "No data"
     };
 
     STATE_BY_CANVAS.set(canvasElement, state);

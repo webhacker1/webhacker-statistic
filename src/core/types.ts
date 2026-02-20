@@ -1,53 +1,66 @@
-export type StatisticAnswer = {
-    answer: string;
-    voteCount: number;
+﻿export type ChartPrimitive = string | number;
+
+export type DataPoint = {
+    label: string;
+    value: number;
 };
 
-export type StatisticData = {
-    countPasses: number;
-    countCorrectPasses: number;
-    answers: StatisticAnswer[];
+export type DoughnutSlice = DataPoint & {
+    color?: string;
 };
 
-export type CourseActivityRow = {
-    date: string;
-    join: number;
-    leave: number;
+export type LineSeries = {
+    identifier: string;
+    label: string;
+    values: number[];
+    color?: string;
 };
 
-export type CourseStepTypeData = {
-    text: number;
-    video: number;
-    test: number;
-    blank: number;
-    matching: number;
+export type ChartUiOptions = {
+    enableLegend?: boolean;
+    valueLabel?: string;
+    shareLabel?: string;
+    noDataLabel?: string;
 };
 
-export type CourseStructureData = {
-    modules: number;
-    lessons: number;
-    steps: number;
+export type LineChartInput = {
+    canvasElement: HTMLCanvasElement;
+    labels: string[];
+    series: LineSeries[];
+    options?: ChartUiOptions;
 };
 
-export type CourseStats = {
-    activityData: CourseActivityRow[];
-    stepTypeData: CourseStepTypeData;
-    structure: CourseStructureData;
+export type BarChartInput = {
+    canvasElement: HTMLCanvasElement;
+    labels: string[];
+    values: number[];
+    colors?: string[];
+    options?: ChartUiOptions;
 };
 
-export type TranslationCourse = {
-    text: string;
-    video: string;
-    test: string;
-    blank: string;
-    matching: string;
-    stat_modules: string;
-    stat_lessons: string;
-    stat_steps: string;
+export type DoughnutChartInput = {
+    canvasElement: HTMLCanvasElement;
+    values: number[];
+    labels?: string[];
+    colors?: string[];
+    cutoutRatio?: number;
+    options?: ChartUiOptions;
 };
 
-export type NormalizedCourseStats = {
-    activityData: CourseActivityRow[];
-    stepTypeData: CourseStepTypeData;
-    structure: CourseStructureData;
+export type RadarChartInput = {
+    canvasElement: HTMLCanvasElement;
+    labels: string[];
+    values: number[];
+    colors?: string[];
+    options?: ChartUiOptions;
+};
+
+export type GenericChartsApi = {
+    renderLineChart: (input: LineChartInput) => void;
+    renderBarChart: (input: BarChartInput) => void;
+    renderDoughnutChart: (input: DoughnutChartInput) => void;
+    renderRadarChart: (input: RadarChartInput) => void;
+    refresh: () => void;
+    destroy: (canvasElement: HTMLCanvasElement) => void;
+    destroyAll: () => void;
 };

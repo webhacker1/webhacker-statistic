@@ -1,9 +1,9 @@
 ﻿<!doctype html>
-<html lang="ru">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Statistics Demo</title>
+    <title>Statistics Library Demo</title>
     <style>
       body {
         margin: 0;
@@ -45,86 +45,130 @@
     </style>
   </head>
   <body>
-    <h2>Демо графиков</h2>
+    <h2>Chart Library Demo</h2>
 
     <div class="period-selector" style="margin-bottom: 12px;">
       <button class="chip active" data-period="7">7</button>
       <button class="chip" data-period="30">30</button>
-      <button class="chip" data-period="all">Все</button>
+      <button class="chip" data-period="all">All</button>
     </div>
 
     <div class="grid">
       <div class="card">
-        <h3>Пончик</h3>
+        <h3>Doughnut</h3>
         <div class="canvas-wrap"><canvas id="stepPie"></canvas></div>
       </div>
 
       <div class="card">
-        <h3>Структура</h3>
+        <h3>Bars</h3>
         <div class="canvas-wrap"><canvas id="structureBar"></canvas></div>
       </div>
 
       <div class="card wide">
-        <h3>Активность</h3>
+        <h3>Line</h3>
         <div class="canvas-wrap"><canvas id="activityChart"></canvas></div>
       </div>
     </div>
 
     <hr style="margin: 24px 0;" />
 
-    <div id="statistics-widget" class="grid">
+    <div class="grid">
       <div class="card">
-        <h3>Успешность</h3>
+        <h3>Completion</h3>
         <div class="canvas-wrap"><canvas id="successRatioChart"></canvas></div>
       </div>
       <div class="card">
-        <h3>Ответы</h3>
+        <h3>Radar</h3>
         <div class="canvas-wrap"><canvas id="answersRadarChart"></canvas></div>
       </div>
     </div>
 
     <script src="./dist/webhacker-statistic.bundle.js"></script>
     <script>
-      window.translations = {
-        course: {
-          text: "Текст",
-          video: "Видео",
-          test: "Тест",
-          blank: "Пропуски",
-          matching: "Сопоставление",
-          stat_modules: "Модули",
-          stat_lessons: "Уроки",
-          stat_steps: "Шаги"
+      const API = window.WebHackerStatistics;
+
+      const timelineRows = [
+        { date: "2026-01-28", a: 2, b: 0 },
+        { date: "2026-01-29", a: 2, b: 0 },
+        { date: "2026-02-01", a: 1, b: 0 },
+        { date: "2026-02-05", a: 13, b: 2 },
+        { date: "2026-02-06", a: 4, b: 1 },
+        { date: "2026-02-11", a: 2, b: 0 }
+      ].map(item => ({ ...item, dateObject: new Date(`${item.date}T00:00`) }));
+
+      function byPeriod(period) {
+        if (period === "all") return [...timelineRows];
+        const days = Number(period) || 7;
+        const cutoff = new Date(new Date().setHours(0, 0, 0, 0) - (days - 1) * 864e5);
+        return timelineRows.filter(item => item.dateObject >= cutoff);
+      }
+
+      function drawLine(period) {
+        const rows = byPeriod(period).sort((a, b) => a.dateObject - b.dateObject);
+        API.renderLineChart({
+          canvasElement: document.getElementById("activityChart"),
+          labels: rows.map(item => item.dateObject.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" })),
+          series: [
+            { identifier: "a", label: "Series A", values: rows.map(item => item.a) },
+            { identifier: "b", label: "Series B", values: rows.map(item => item.b) }
+          ],
+          options: { enableLegend: true }
+        });
+      }
+
+      document.querySelectorAll(".period-selector .chip").forEach(buttonElement => {
+        buttonElement.addEventListener("click", () => {
+          document.querySelectorAll(".period-selector .chip").forEach(chip => chip.classList.remove("active"));
+          buttonElement.classList.add("active");
+          drawLine(buttonElement.dataset.period || "7");
+        });
+      });
+
+      API.renderDoughnutChart({
+        canvasElement: document.getElementById("stepPie"),
+        labels: ["Text", "Video", "Quiz", "Blank", "Matching"],
+        values: [8, 6, 17, 2, 5],
+        options: {
+          valueLabel: "Count",
+          shareLabel: "Share",
+          enableLegend: true
         }
-      };
+      });
 
-      window.courseStats = {
-        activityData: [
-          { date: "2026-01-28", join: 2, leave: 0 },
-          { date: "2026-01-29", join: 2, leave: 0 },
-          { date: "2026-02-01", join: 1, leave: 0 },
-          { date: "2026-02-05", join: 13, leave: 2 },
-          { date: "2026-02-06", join: 4, leave: 1 },
-          { date: "2026-02-11", join: 2, leave: 0 }
-        ],
-        stepTypeData: { text: 8, video: 6, test: 17, blank: 2, matching: 5 },
-        structure: { modules: 6, lessons: 7, steps: 34 }
-      };
+      API.renderBarChart({
+        canvasElement: document.getElementById("structureBar"),
+        labels: ["Modules", "Lessons", "Steps"],
+        values: [6, 7, 34],
+        options: {
+          valueLabel: "Count",
+          enableLegend: true
+        }
+      });
 
-      window.statData = {
-        countPasses: 152,
-        countCorrectPasses: 119,
-        answers: [
-          { answer: "Текст", vote_count: 8 },
-          { answer: "Видео", vote_count: 6 },
-          { answer: "Тест", vote_count: 17 },
-          { answer: "Пропуски", vote_count: 2 },
-          { answer: "Сопоставление", vote_count: 5 }
-        ]
-      };
+      API.renderDoughnutChart({
+        canvasElement: document.getElementById("successRatioChart"),
+        labels: ["Passed", "Failed"],
+        values: [119, 33],
+        colors: ["#28a745", "#e74c3c"],
+        cutoutRatio: 0.58,
+        options: {
+          valueLabel: "Count",
+          shareLabel: "Share",
+          enableLegend: true
+        }
+      });
 
-      window.initStatistic();
-      window.statisticTest(document.getElementById("statistics-widget"));
+      API.renderRadarChart({
+        canvasElement: document.getElementById("answersRadarChart"),
+        labels: ["Text", "Video", "Quiz", "Blank", "Matching"],
+        values: [8, 6, 17, 2, 5],
+        options: {
+          valueLabel: "Votes",
+          noDataLabel: "No data"
+        }
+      });
+
+      drawLine("7");
     </script>
   </body>
 </html>

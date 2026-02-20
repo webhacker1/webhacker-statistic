@@ -14,15 +14,15 @@ export type ResolvedTheme = {
     palette: string[];
 };
 
-function readCssVariable(variableName: string, fallbackValue: string): string {
-    const rawValue = getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
+function readCssVariable(variableName: string, fallbackValue: string, themeSourceElement: Element): string {
+    const rawValue = getComputedStyle(themeSourceElement).getPropertyValue(variableName).trim();
     return rawValue || fallbackValue;
 }
 
-function readCssVariables(variableNames: string[], fallbackValue: string): string {
+function readCssVariables(variableNames: string[], fallbackValue: string, themeSourceElement: Element): string {
     for (let index = 0; index < variableNames.length; index += 1) {
         const variableName = variableNames[index];
-        const rawValue = getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
+        const rawValue = getComputedStyle(themeSourceElement).getPropertyValue(variableName).trim();
         if (rawValue) return rawValue;
     }
     return fallbackValue;
@@ -43,32 +43,50 @@ export function toTransparent(color: string, alpha = 0.2): string {
     return color;
 }
 
-export function resolveTheme(): ResolvedTheme {
+export function resolveTheme(themeSourceElement?: Element): ResolvedTheme {
+    const sourceElement =
+        themeSourceElement || document.body || document.documentElement;
+
+    const panelBackground = readCssVariables(
+        [THEME_VARIABLES.panelBackground, "--background-color", "--surface-color"],
+        DEFAULT_THEME_VALUES.panelBackground,
+        sourceElement
+    );
+
     return {
-        panelBackground: readCssVariables(
-            [THEME_VARIABLES.panelBackground, "--background-color", "--surface-color"],
-            DEFAULT_THEME_VALUES.panelBackground
-        ),
+        panelBackground,
         panelBorder: readCssVariables(
             [THEME_VARIABLES.panelBorder, "--border-color"],
-            DEFAULT_THEME_VALUES.panelBorder
+            DEFAULT_THEME_VALUES.panelBorder,
+            sourceElement
         ),
         textPrimary: readCssVariables(
             [THEME_VARIABLES.textPrimary, "--text-color", "--color-text"],
-            DEFAULT_THEME_VALUES.textPrimary
+            DEFAULT_THEME_VALUES.textPrimary,
+            sourceElement
         ),
         textSecondary: readCssVariables(
             [THEME_VARIABLES.textSecondary, "--muted-text-color", "--color-text-secondary"],
-            DEFAULT_THEME_VALUES.textSecondary
+            DEFAULT_THEME_VALUES.textSecondary,
+            sourceElement
         ),
-        lineJoin: readCssVariable(THEME_VARIABLES.lineJoin, DEFAULT_THEME_VALUES.lineJoin),
-        lineLeave: readCssVariable(THEME_VARIABLES.lineLeave, DEFAULT_THEME_VALUES.lineLeave),
-        success: readCssVariable(THEME_VARIABLES.success, DEFAULT_THEME_VALUES.success),
-        danger: readCssVariable(THEME_VARIABLES.danger, DEFAULT_THEME_VALUES.danger),
-        grid: readCssVariable(THEME_VARIABLES.grid, DEFAULT_THEME_VALUES.grid),
-        doughnutHoleBackground: readCssVariable(
-            THEME_VARIABLES.doughnutHoleBackground,
-            DEFAULT_THEME_VALUES.doughnutHoleBackground
+        lineJoin: readCssVariable(
+            THEME_VARIABLES.lineJoin,
+            DEFAULT_THEME_VALUES.lineJoin,
+            sourceElement
+        ),
+        lineLeave: readCssVariable(
+            THEME_VARIABLES.lineLeave,
+            DEFAULT_THEME_VALUES.lineLeave,
+            sourceElement
+        ),
+        success: readCssVariable(THEME_VARIABLES.success, DEFAULT_THEME_VALUES.success, sourceElement),
+        danger: readCssVariable(THEME_VARIABLES.danger, DEFAULT_THEME_VALUES.danger, sourceElement),
+        grid: readCssVariable(THEME_VARIABLES.grid, DEFAULT_THEME_VALUES.grid, sourceElement),
+        doughnutHoleBackground: readCssVariables(
+            [THEME_VARIABLES.doughnutHoleBackground, "--background-color", "--surface-color"],
+            panelBackground,
+            sourceElement
         ),
         palette: [
             "#4caf50",
