@@ -1,0 +1,31 @@
+{
+  "name": "webhacker-statistic",
+  "version": "1.0.0",
+  "description": "Vanilla TS + LESS statistics widget for CDN embedding",
+  "type": "module",
+  "main": "dist/webhacker-statistic.bundle.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "statistics",
+    "charts",
+    "dashboard",
+    "widget",
+    "typescript",
+    "less",
+    "cdn"
+  ],
+  "author": "webhacker",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "less": "^4.2.0",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.0",
+    "vite-plugin-css-injected-by-js": "^3.5.2"
+  }
+}

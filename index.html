@@ -1,0 +1,130 @@
+﻿<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Statistics Demo</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        background: #f3f7fc;
+        font-family: "Segoe UI", Arial, sans-serif;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(280px, 1fr));
+        gap: 16px;
+      }
+
+      .card {
+        background: #fff;
+        border: 1px solid #dbe7f5;
+        border-radius: 14px;
+        padding: 12px;
+      }
+
+      .wide {
+        grid-column: span 2;
+      }
+
+      .canvas-wrap {
+        height: 320px;
+      }
+
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .wide {
+          grid-column: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Демо графиков</h2>
+
+    <div class="period-selector" style="margin-bottom: 12px;">
+      <button class="chip active" data-period="7">7</button>
+      <button class="chip" data-period="30">30</button>
+      <button class="chip" data-period="all">Все</button>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Пончик</h3>
+        <div class="canvas-wrap"><canvas id="stepPie"></canvas></div>
+      </div>
+
+      <div class="card">
+        <h3>Структура</h3>
+        <div class="canvas-wrap"><canvas id="structureBar"></canvas></div>
+      </div>
+
+      <div class="card wide">
+        <h3>Активность</h3>
+        <div class="canvas-wrap"><canvas id="activityChart"></canvas></div>
+      </div>
+    </div>
+
+    <hr style="margin: 24px 0;" />
+
+    <div id="statistics-widget" class="grid">
+      <div class="card">
+        <h3>Успешность</h3>
+        <div class="canvas-wrap"><canvas id="successRatioChart"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Ответы</h3>
+        <div class="canvas-wrap"><canvas id="answersRadarChart"></canvas></div>
+      </div>
+    </div>
+
+    <script src="./dist/webhacker-statistic.bundle.js"></script>
+    <script>
+      window.translations = {
+        course: {
+          text: "Текст",
+          video: "Видео",
+          test: "Тест",
+          blank: "Пропуски",
+          matching: "Сопоставление",
+          stat_modules: "Модули",
+          stat_lessons: "Уроки",
+          stat_steps: "Шаги"
+        }
+      };
+
+      window.courseStats = {
+        activityData: [
+          { date: "2026-01-28", join: 2, leave: 0 },
+          { date: "2026-01-29", join: 2, leave: 0 },
+          { date: "2026-02-01", join: 1, leave: 0 },
+          { date: "2026-02-05", join: 13, leave: 2 },
+          { date: "2026-02-06", join: 4, leave: 1 },
+          { date: "2026-02-11", join: 2, leave: 0 }
+        ],
+        stepTypeData: { text: 8, video: 6, test: 17, blank: 2, matching: 5 },
+        structure: { modules: 6, lessons: 7, steps: 34 }
+      };
+
+      window.statData = {
+        countPasses: 152,
+        countCorrectPasses: 119,
+        answers: [
+          { answer: "Текст", vote_count: 8 },
+          { answer: "Видео", vote_count: 6 },
+          { answer: "Тест", vote_count: 17 },
+          { answer: "Пропуски", vote_count: 2 },
+          { answer: "Сопоставление", vote_count: 5 }
+        ]
+      };
+
+      window.initStatistic();
+      window.statisticTest(document.getElementById("statistics-widget"));
+    </script>
+  </body>
+</html>
