@@ -1,174 +1,251 @@
 ﻿<!doctype html>
-<html lang="en">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Statistics Library Demo</title>
+    <title>WebHackerStatistics v2 Demo</title>
     <style>
       body {
         margin: 0;
         padding: 20px;
-        background: #f3f7fc;
-        font-family: "Segoe UI", Arial, sans-serif;
+        background: linear-gradient(180deg, #eef5ff 0%, #f7fbff 100%);
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
       }
 
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(280px, 1fr));
-        gap: 16px;
+      .toolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
       }
 
-      .card {
-        background: #fff;
-        border: 1px solid #dbe7f5;
-        border-radius: 14px;
-        padding: 12px;
+      .toolbar button {
+        border: 1px solid #b9d2f2;
+        background: #ffffff;
+        border-radius: 999px;
+        padding: 7px 12px;
+        cursor: pointer;
       }
 
-      .wide {
-        grid-column: span 2;
+      .toolbar button:hover {
+        background: #f2f8ff;
       }
 
-      .canvas-wrap {
-        height: 320px;
-      }
-
-      @media (max-width: 900px) {
-        .grid {
-          grid-template-columns: 1fr;
-        }
-
-        .wide {
-          grid-column: auto;
-        }
+      .toolbar button.active {
+        border-color: #2f89ff;
+        color: #2f89ff;
+        font-weight: 600;
       }
     </style>
   </head>
   <body>
-    <h2>Chart Library Demo</h2>
+    <div class="statistics-widget-root">
+      <h1 style="margin: 0 0 12px; font-size: 22px; color: #1f2d3d">WebHackerStatistics v2</h1>
 
-    <div class="period-selector" style="margin-bottom: 12px;">
-      <button class="chip active" data-period="7">7</button>
-      <button class="chip" data-period="30">30</button>
-      <button class="chip" data-period="all">All</button>
-    </div>
-
-    <div class="grid">
-      <div class="card">
-        <h3>Doughnut</h3>
-        <div class="canvas-wrap"><canvas id="stepPie"></canvas></div>
+      <div class="toolbar" id="periodControls">
+        <button data-days="7" class="active">7 дней</button>
+        <button data-days="30">30 дней</button>
+        <button data-days="90">90 дней</button>
+        <button id="shuffleData">Перемешать данные</button>
       </div>
 
-      <div class="card">
-        <h3>Bars</h3>
-        <div class="canvas-wrap"><canvas id="structureBar"></canvas></div>
-      </div>
+      <div class="wh-dashboard">
+        <article class="wh-card">
+          <h3>Посещения по дням</h3>
+          <div class="wh-canvas-wrap"><canvas id="lineStat"></canvas></div>
+        </article>
 
-      <div class="card wide">
-        <h3>Line</h3>
-        <div class="canvas-wrap"><canvas id="activityChart"></canvas></div>
-      </div>
-    </div>
+        <article class="wh-card">
+          <h3>Структура курса</h3>
+          <div class="wh-canvas-wrap"><canvas id="barStat"></canvas></div>
+        </article>
 
-    <hr style="margin: 24px 0;" />
+        <article class="wh-card wh-card--wide">
+          <h3>Распределение типов заданий</h3>
+          <div class="wh-canvas-wrap"><canvas id="doughnutStat"></canvas></div>
+        </article>
 
-    <div class="grid">
-      <div class="card">
-        <h3>Completion</h3>
-        <div class="canvas-wrap"><canvas id="successRatioChart"></canvas></div>
-      </div>
-      <div class="card">
-        <h3>Radar</h3>
-        <div class="canvas-wrap"><canvas id="answersRadarChart"></canvas></div>
+        <article class="wh-card">
+          <h3>Профиль навыков</h3>
+          <div class="wh-canvas-wrap"><canvas id="radarStat"></canvas></div>
+        </article>
       </div>
     </div>
 
     <script src="./dist/webhacker-statistic.bundle.js"></script>
     <script>
-      const API = window.WebHackerStatistics;
+      const { Statistic } = window.WebHackerStatistics;
 
-      const timelineRows = [
-        { date: "2026-01-28", a: 2, b: 0 },
-        { date: "2026-01-29", a: 2, b: 0 },
-        { date: "2026-02-01", a: 1, b: 0 },
-        { date: "2026-02-05", a: 13, b: 2 },
-        { date: "2026-02-06", a: 4, b: 1 },
-        { date: "2026-02-11", a: 2, b: 0 }
-      ].map(item => ({ ...item, dateObject: new Date(`${item.date}T00:00`) }));
+      const activityRows = Array.from({ length: 90 }, (_, index) => {
+        const date = new Date();
+        date.setDate(date.getDate() - (89 - index));
+        return {
+          date,
+          joins: Math.floor(8 + Math.random() * 44),
+          leaves: Math.floor(1 + Math.random() * 10)
+        };
+      });
 
-      function byPeriod(period) {
-        if (period === "all") return [...timelineRows];
-        const days = Number(period) || 7;
-        const cutoff = new Date(new Date().setHours(0, 0, 0, 0) - (days - 1) * 864e5);
-        return timelineRows.filter(item => item.dateObject >= cutoff);
-      }
+      const lineStat = new Statistic(document.getElementById("lineStat"), {
+        type: "line",
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: "Зашли",
+              data: [],
+              borderColor: "#2f89ff",
+              backgroundColor: "rgba(47,137,255,0.20)",
+              fill: true,
+              tension: 0.35,
+              pointRadius: 3
+            },
+            {
+              label: "Вышли",
+              data: [],
+              borderColor: "#ff6a55",
+              backgroundColor: "rgba(255,106,85,0.14)",
+              fill: true,
+              tension: 0.35,
+              pointRadius: 3
+            }
+          ]
+        },
+        options: {
+          animation: { duration: 1000 },
+          plugins: { legend: { display: true } }
+        }
+      });
 
-      function drawLine(period) {
-        const rows = byPeriod(period).sort((a, b) => a.dateObject - b.dateObject);
-        API.renderLineChart({
-          canvasElement: document.getElementById("activityChart"),
-          labels: rows.map(item => item.dateObject.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" })),
-          series: [
-            { identifier: "a", label: "Series A", values: rows.map(item => item.a) },
-            { identifier: "b", label: "Series B", values: rows.map(item => item.b) }
-          ],
-          options: { enableLegend: true }
+      const barStat = new Statistic(document.getElementById("barStat"), {
+        type: "bar",
+        data: {
+          labels: ["Модули", "Уроки", "Шаги"],
+          datasets: [
+            {
+              label: "Количество",
+              data: [6, 14, 49],
+              backgroundColor: ["#36A2EB", "#4BC0C0", "#8BC34A"]
+            }
+          ]
+        },
+        options: {
+          animation: { duration: 850 },
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      const doughnutStat = new Statistic(document.getElementById("doughnutStat"), {
+        type: "doughnut",
+        data: {
+          labels: ["Текст", "Видео", "Тест", "Blank", "Matching"],
+          datasets: [
+            {
+              data: [18, 11, 28, 4, 9],
+              backgroundColor: ["#36A2EB", "#FF6384", "#FFCE56", "#4BC0C0", "#9966FF"]
+            }
+          ]
+        },
+        options: {
+          cutout: "60%",
+          animation: { duration: 900 },
+          plugins: { legend: { display: true } }
+        }
+      });
+
+      const radarStat = new Statistic(document.getElementById("radarStat"), {
+        type: "radar",
+        data: {
+          labels: ["Логика", "Практика", "Теория", "Скорость", "Коммуникация"],
+          datasets: [
+            {
+              label: "Текущий уровень",
+              data: [72, 61, 84, 57, 66],
+              borderColor: "#2f89ff",
+              backgroundColor: "rgba(47,137,255,0.18)",
+              fill: true
+            },
+            {
+              label: "Целевой уровень",
+              data: [85, 82, 90, 74, 80],
+              borderColor: "#ff9f40",
+              backgroundColor: "rgba(255,159,64,0.10)",
+              fill: true
+            }
+          ]
+        },
+        options: {
+          animation: { duration: 920 },
+          plugins: { legend: { display: true } }
+        }
+      });
+
+      function applyPeriod(days) {
+        const rows = activityRows.slice(-days);
+        lineStat.update({
+          type: "line",
+          data: {
+            labels: rows.map(item => item.date.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" })),
+            datasets: [
+              {
+                label: "Зашли",
+                data: rows.map(item => item.joins),
+                borderColor: "#2f89ff",
+                backgroundColor: "rgba(47,137,255,0.20)",
+                fill: true,
+                tension: 0.35,
+                pointRadius: 3
+              },
+              {
+                label: "Вышли",
+                data: rows.map(item => item.leaves),
+                borderColor: "#ff6a55",
+                backgroundColor: "rgba(255,106,85,0.14)",
+                fill: true,
+                tension: 0.35,
+                pointRadius: 3
+              }
+            ]
+          },
+          options: {
+            animation: { duration: 760 },
+            plugins: { legend: { display: true } }
+          }
         });
       }
 
-      document.querySelectorAll(".period-selector .chip").forEach(buttonElement => {
-        buttonElement.addEventListener("click", () => {
-          document.querySelectorAll(".period-selector .chip").forEach(chip => chip.classList.remove("active"));
-          buttonElement.classList.add("active");
-          drawLine(buttonElement.dataset.period || "7");
+      document.querySelectorAll("#periodControls button[data-days]").forEach(button => {
+        button.addEventListener("click", () => {
+          document
+            .querySelectorAll("#periodControls button[data-days]")
+            .forEach(item => item.classList.remove("active"));
+
+          button.classList.add("active");
+          applyPeriod(Number(button.dataset.days));
         });
       });
 
-      API.renderDoughnutChart({
-        canvasElement: document.getElementById("stepPie"),
-        labels: ["Text", "Video", "Quiz", "Blank", "Matching"],
-        values: [8, 6, 17, 2, 5],
-        options: {
-          valueLabel: "Count",
-          shareLabel: "Share",
-          enableLegend: true
-        }
+      document.getElementById("shuffleData").addEventListener("click", () => {
+        const current = barStat.getConfig();
+        const next = current.data.datasets[0].data.map(() => Math.floor(4 + Math.random() * 60));
+
+        barStat.update({
+          ...current,
+          data: {
+            ...current.data,
+            datasets: [
+              {
+                ...current.data.datasets[0],
+                data: next
+              }
+            ]
+          }
+        });
       });
 
-      API.renderBarChart({
-        canvasElement: document.getElementById("structureBar"),
-        labels: ["Modules", "Lessons", "Steps"],
-        values: [6, 7, 34],
-        options: {
-          valueLabel: "Count",
-          enableLegend: true
-        }
-      });
-
-      API.renderDoughnutChart({
-        canvasElement: document.getElementById("successRatioChart"),
-        labels: ["Passed", "Failed"],
-        values: [119, 33],
-        colors: ["#28a745", "#e74c3c"],
-        cutoutRatio: 0.58,
-        options: {
-          valueLabel: "Count",
-          shareLabel: "Share",
-          enableLegend: true
-        }
-      });
-
-      API.renderRadarChart({
-        canvasElement: document.getElementById("answersRadarChart"),
-        labels: ["Text", "Video", "Quiz", "Blank", "Matching"],
-        values: [8, 6, 17, 2, 5],
-        options: {
-          valueLabel: "Votes",
-          noDataLabel: "No data"
-        }
-      });
-
-      drawLine("7");
+      applyPeriod(7);
     </script>
   </body>
 </html>
+

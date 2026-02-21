@@ -1,244 +1,205 @@
-﻿import "./styles/widget.less";
-import { resolveTheme } from "./core/themes";
-import { renderLineChart } from "./charts/lineChart";
-import { renderBarChart } from "./charts/barChart";
-import { renderDoughnutChart } from "./charts/doughnutChart";
-import { renderRadarChart } from "./charts/radarChart";
+import "./styles/widget.less";
+import { Statistic, destroyAllStatistics, getStatistic } from "./core/Statistic";
+import { DEFAULT_PALETTE } from "./core/defaults";
 import type {
-    BarChartInput,
-    DoughnutChartInput,
-    GenericChartsApi,
-    LineChartInput,
-    RadarChartInput
+    BarStatisticInput,
+    DoughnutStatisticInput,
+    LineStatisticInput,
+    RadarStatisticInput,
+    StatisticConfig,
+    WebHackerStatisticsApi
 } from "./core/types";
+import { toRgba } from "./core/utils";
 
-type RenderBucket = {
-    line: Map<HTMLCanvasElement, LineChartInput>;
-    bar: Map<HTMLCanvasElement, BarChartInput>;
-    doughnut: Map<HTMLCanvasElement, DoughnutChartInput>;
-    radar: Map<HTMLCanvasElement, RadarChartInput>;
-};
+const managedCanvases = new Set<HTMLCanvasElement>();
 
-const renderBucket: RenderBucket = {
-    line: new Map(),
-    bar: new Map(),
-    doughnut: new Map(),
-    radar: new Map()
-};
-
-let themeObserver: MutationObserver | null = null;
-let scheduledRefreshFrame: number | null = null;
-
-function getThemeSourceElement(canvasElement: HTMLCanvasElement): Element {
-    return canvasElement.closest(".statistics-widget-root") || document.body || document.documentElement;
+function valueTooltip(valueLabel?: string): NonNullable<NonNullable<StatisticConfig["options"]>["plugins"]>["tooltip"] {
+    return {
+        valueFormatter: value => (valueLabel ? `${valueLabel}: ${Math.round(value)}` : String(Math.round(value)))
+    };
 }
 
-function scheduleRefresh(): void {
-    if (scheduledRefreshFrame !== null) {
-        cancelAnimationFrame(scheduledRefreshFrame);
-        scheduledRefreshFrame = null;
+function upsertStatistic(canvas: HTMLCanvasElement, config: StatisticConfig, managed = false): void {
+    const existingStatistic = getStatistic(canvas);
+
+    if (existingStatistic) {
+        existingStatistic.update(config);
+    } else {
+        new Statistic(canvas, config);
     }
 
-    scheduledRefreshFrame = requestAnimationFrame(() => {
-        scheduledRefreshFrame = null;
-        refreshAll();
-    });
-}
-
-function ensureThemeObserver(): void {
-    if (themeObserver) return;
-
-    const observer = new MutationObserver(() => {
-        scheduleRefresh();
-    });
-
-    observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ["style", "class", "data-theme", "theme"]
-    });
-
-    if (document.body) {
-        observer.observe(document.body, {
-            attributes: true,
-            attributeFilter: ["style", "class", "data-theme", "theme"]
-        });
+    if (managed) {
+        managedCanvases.add(canvas);
     }
-
-    window.addEventListener("resize", () => scheduleRefresh());
-    themeObserver = observer;
 }
 
-function sanitizeLineInput(input: LineChartInput): LineChartInput {
+function lineInputToConfig(input: LineStatisticInput): StatisticConfig {
     return {
-        canvasElement: input.canvasElement,
-        labels: [...input.labels],
-        series: input.series.map(seriesItem => ({
-            identifier: String(seriesItem.identifier),
-            label: String(seriesItem.label),
-            values: [...seriesItem.values],
-            color: seriesItem.color
-        })),
+        type: "line",
+        data: {
+            labels: input.labels,
+            datasets: input.series.map((seriesItem, index) => {
+                const color = seriesItem.color ?? DEFAULT_PALETTE[index % DEFAULT_PALETTE.length];
+                return {
+                    label: seriesItem.label,
+                    data: seriesItem.values,
+                    borderColor: color,
+                    backgroundColor: toRgba(color, 0.18),
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 3
+                };
+            })
+        },
         options: {
-            ...input.options
+            plugins: {
+                legend: {
+                    display: input.options?.enableLegend !== false
+                }
+            }
         }
     };
 }
 
-function sanitizeBarInput(input: BarChartInput): BarChartInput {
+function barInputToConfig(input: BarStatisticInput): StatisticConfig {
     return {
-        canvasElement: input.canvasElement,
-        labels: [...input.labels],
-        values: [...input.values],
-        colors: input.colors ? [...input.colors] : undefined,
+        type: "bar",
+        data: {
+            labels: input.labels,
+            datasets: [
+                {
+                    label: input.options?.valueLabel ?? "Value",
+                    data: input.values,
+                    backgroundColor:
+                        input.colors && input.colors.length > 0
+                            ? input.colors
+                            : input.values.map((_, index) => DEFAULT_PALETTE[index % DEFAULT_PALETTE.length]),
+                    borderColor: "#1f6fff",
+                    borderWidth: 0,
+                    fill: false
+                }
+            ]
+        },
         options: {
-            ...input.options
+            plugins: {
+                legend: {
+                    display: input.options?.enableLegend !== false
+                },
+                tooltip: valueTooltip(input.options?.valueLabel)
+            }
         }
     };
 }
 
-function sanitizeDoughnutInput(input: DoughnutChartInput): DoughnutChartInput {
+function doughnutInputToConfig(input: DoughnutStatisticInput): StatisticConfig {
     return {
-        canvasElement: input.canvasElement,
-        values: [...input.values],
-        labels: input.labels ? [...input.labels] : undefined,
-        colors: input.colors ? [...input.colors] : undefined,
-        cutoutRatio: input.cutoutRatio,
+        type: "doughnut",
+        data: {
+            labels:
+                input.labels && input.labels.length > 0
+                    ? input.labels
+                    : input.values.map((_, index) => `Item ${index + 1}`),
+            datasets: [
+                {
+                    label: input.options?.valueLabel ?? "Value",
+                    data: input.values,
+                    backgroundColor:
+                        input.colors && input.colors.length > 0
+                            ? input.colors
+                            : input.values.map((_, index) => DEFAULT_PALETTE[index % DEFAULT_PALETTE.length]),
+                    borderWidth: 0,
+                    fill: false
+                }
+            ]
+        },
         options: {
-            ...input.options
+            cutout: `${Math.round((input.cutoutRatio ?? 0.58) * 100)}%`,
+            plugins: {
+                legend: {
+                    display: input.options?.enableLegend !== false
+                },
+                tooltip: valueTooltip(input.options?.valueLabel)
+            }
         }
     };
 }
 
-function sanitizeRadarInput(input: RadarChartInput): RadarChartInput {
+function radarInputToConfig(input: RadarStatisticInput): StatisticConfig {
+    const color = input.colors?.[0] ?? DEFAULT_PALETTE[0];
+
     return {
-        canvasElement: input.canvasElement,
-        labels: [...input.labels],
-        values: [...input.values],
-        colors: input.colors ? [...input.colors] : undefined,
+        type: "radar",
+        data: {
+            labels: input.labels,
+            datasets: [
+                {
+                    label: input.options?.valueLabel ?? "Value",
+                    data: input.values,
+                    borderColor: color,
+                    backgroundColor: toRgba(color, 0.2),
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    fill: true
+                }
+            ]
+        },
         options: {
-            ...input.options
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: valueTooltip(input.options?.valueLabel)
+            }
         }
     };
 }
 
-function applyLineInput(input: LineChartInput): void {
-    const theme = resolveTheme(getThemeSourceElement(input.canvasElement));
-    renderLineChart(
-        input.canvasElement,
-        input.labels,
-        input.series.map((seriesItem, seriesIndex) => ({
-            ...seriesItem,
-            color: seriesItem.color || theme.palette[seriesIndex % theme.palette.length]
-        })),
-        theme,
-        {
-            enableLegend: input.options?.enableLegend
-        }
-    );
+function renderLine(input: LineStatisticInput): void {
+    upsertStatistic(input.canvasElement, lineInputToConfig(input), true);
 }
 
-function applyBarInput(input: BarChartInput): void {
-    const theme = resolveTheme(getThemeSourceElement(input.canvasElement));
-    renderBarChart(input.canvasElement, input.labels, input.values, theme, {
-        enableLegend: input.options?.enableLegend,
-        valueLabel: input.options?.valueLabel
+function renderBar(input: BarStatisticInput): void {
+    upsertStatistic(input.canvasElement, barInputToConfig(input), true);
+}
+
+function renderDoughnut(input: DoughnutStatisticInput): void {
+    upsertStatistic(input.canvasElement, doughnutInputToConfig(input), true);
+}
+
+function renderRadar(input: RadarStatisticInput): void {
+    upsertStatistic(input.canvasElement, radarInputToConfig(input), true);
+}
+
+function refresh(): void {
+    managedCanvases.forEach(canvas => {
+        getStatistic(canvas)?.update();
     });
 }
 
-function applyDoughnutInput(input: DoughnutChartInput): void {
-    const theme = resolveTheme(getThemeSourceElement(input.canvasElement));
-    renderDoughnutChart(
-        input.canvasElement,
-        input.values,
-        input.colors || theme.palette.slice(0, input.values.length || 1),
-        theme,
-        input.cutoutRatio,
-        input.labels,
-        {
-            enableLegend: input.options?.enableLegend,
-            valueLabel: input.options?.valueLabel,
-            shareLabel: input.options?.shareLabel
-        }
-    );
+function destroy(canvasElement: HTMLCanvasElement): void {
+    getStatistic(canvasElement)?.destroy();
+    managedCanvases.delete(canvasElement);
 }
 
-function applyRadarInput(input: RadarChartInput): void {
-    const theme = resolveTheme(getThemeSourceElement(input.canvasElement));
-    renderRadarChart(
-        input.canvasElement,
-        input.labels,
-        input.values,
-        input.colors || theme.palette.slice(0, input.values.length || 1),
-        theme,
-        {
-            valueLabel: input.options?.valueLabel,
-            noDataLabel: input.options?.noDataLabel
-        }
-    );
+function destroyAll(): void {
+    destroyAllStatistics();
+    managedCanvases.clear();
 }
 
-function renderLineChartApi(input: LineChartInput): void {
-    const normalizedInput = sanitizeLineInput(input);
-    renderBucket.line.set(normalizedInput.canvasElement, normalizedInput);
-    applyLineInput(normalizedInput);
-    ensureThemeObserver();
-}
-
-function renderBarChartApi(input: BarChartInput): void {
-    const normalizedInput = sanitizeBarInput(input);
-    renderBucket.bar.set(normalizedInput.canvasElement, normalizedInput);
-    applyBarInput(normalizedInput);
-    ensureThemeObserver();
-}
-
-function renderDoughnutChartApi(input: DoughnutChartInput): void {
-    const normalizedInput = sanitizeDoughnutInput(input);
-    renderBucket.doughnut.set(normalizedInput.canvasElement, normalizedInput);
-    applyDoughnutInput(normalizedInput);
-    ensureThemeObserver();
-}
-
-function renderRadarChartApi(input: RadarChartInput): void {
-    const normalizedInput = sanitizeRadarInput(input);
-    renderBucket.radar.set(normalizedInput.canvasElement, normalizedInput);
-    applyRadarInput(normalizedInput);
-    ensureThemeObserver();
-}
-
-function refreshAll(): void {
-    renderBucket.line.forEach(input => applyLineInput(input));
-    renderBucket.bar.forEach(input => applyBarInput(input));
-    renderBucket.doughnut.forEach(input => applyDoughnutInput(input));
-    renderBucket.radar.forEach(input => applyRadarInput(input));
-}
-
-function destroyChart(canvasElement: HTMLCanvasElement): void {
-    renderBucket.line.delete(canvasElement);
-    renderBucket.bar.delete(canvasElement);
-    renderBucket.doughnut.delete(canvasElement);
-    renderBucket.radar.delete(canvasElement);
-}
-
-function destroyAllCharts(): void {
-    renderBucket.line.clear();
-    renderBucket.bar.clear();
-    renderBucket.doughnut.clear();
-    renderBucket.radar.clear();
-}
-
-const widgetApi: GenericChartsApi = {
-    renderLineChart: renderLineChartApi,
-    renderBarChart: renderBarChartApi,
-    renderDoughnutChart: renderDoughnutChartApi,
-    renderRadarChart: renderRadarChartApi,
-    refresh: refreshAll,
-    destroy: destroyChart,
-    destroyAll: destroyAllCharts
+const widgetApi: WebHackerStatisticsApi = {
+    Statistic,
+    renderLine,
+    renderBar,
+    renderDoughnut,
+    renderRadar,
+    refresh,
+    destroy,
+    destroyAll
 };
 
 declare global {
     interface Window {
-        WebHackerStatistics: GenericChartsApi;
+        WebHackerStatistics: WebHackerStatisticsApi;
     }
 }
 
@@ -246,13 +207,4 @@ if (typeof window !== "undefined") {
     window.WebHackerStatistics = widgetApi;
 }
 
-export {
-    renderLineChartApi as renderLineChart,
-    renderBarChartApi as renderBarChart,
-    renderDoughnutChartApi as renderDoughnutChart,
-    renderRadarChartApi as renderRadarChart,
-    refreshAll as refresh,
-    destroyChart as destroy,
-    destroyAllCharts as destroyAll,
-    widgetApi
-};
+export { Statistic, renderLine, renderBar, renderDoughnut, renderRadar, refresh, destroy, destroyAll, widgetApi };

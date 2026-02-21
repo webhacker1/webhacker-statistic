@@ -1,6 +1,12 @@
-# WebHacker Statistic
+﻿# WebHackerStatistics v2
 
-Canvas-based статистическая библиотека без сторонних сервисов и внешних chart-библиотек.
+Canvas-библиотека статистики с простым API.
+
+Поддерживаемые типы:
+- `line`
+- `bar`
+- `doughnut`
+- `radar`
 
 ## Сборка
 
@@ -10,57 +16,56 @@ npm run build
 ```
 
 Результат:
-
 - `dist/webhacker-statistic.bundle.js`
 
-## Подключение
+## Быстрый старт
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/webhacker1/statisticsWH@v1.0.0/dist/webhacker-statistic.bundle.js"></script>
-```
+<script src="./dist/webhacker-statistic.bundle.js"></script>
 
-## Формат входных данных
+<div class="statistics-widget-root">
+  <div style="height: 320px"><canvas id="stat"></canvas></div>
+</div>
 
-```js
-window.courseStats = {
-    activityData: [{ date: "2026-02-01", join: 10, leave: 2 }],
-    stepTypeData: { text: 8, video: 6, test: 17, blank: 2, matching: 5 },
-    structure: { modules: 6, lessons: 7, steps: 34 }
-};
-
-window.translations = {
-    course: {
-        text: "Текст",
-        video: "Видео",
-        test: "Тест",
-        blank: "Пропуски",
-        matching: "Сопоставление",
-        stat_modules: "Модули",
-        stat_lessons: "Уроки",
-        stat_steps: "Шаги"
+<script>
+  const stat = new window.WebHackerStatistics.Statistic(document.getElementById("stat"), {
+    type: "line",
+    data: {
+      labels: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+      datasets: [
+        {
+          label: "Users",
+          data: [12, 19, 14, 21, 25],
+          borderColor: "#2f89ff",
+          backgroundColor: "rgba(47,137,255,0.20)",
+          fill: true
+        }
+      ]
     }
-};
+  });
 
-window.statData = {
-    countPasses: 152,
-    countCorrectPasses: 119,
-    answers: [
-        { answer: "Текст", vote_count: 8 },
-        { answer: "Видео", vote_count: 6 }
-    ]
-};
+  // обновление
+  stat.update();
+  // удаление
+  // stat.destroy();
+</script>
 ```
 
 ## API
 
-```js
-window.WebHackerStatistics.initStatistic();
-window.WebHackerStatistics.statisticTest(document.getElementById("statistics-widget"));
-```
+Публичный объект:
+- `window.WebHackerStatistics.Statistic`
+- `window.WebHackerStatistics.renderLine(input)`
+- `window.WebHackerStatistics.renderBar(input)`
+- `window.WebHackerStatistics.renderDoughnut(input)`
+- `window.WebHackerStatistics.renderRadar(input)`
+- `window.WebHackerStatistics.refresh()`
+- `window.WebHackerStatistics.destroy(canvas)`
+- `window.WebHackerStatistics.destroyAll()`
 
-Совместимые алиасы:
+## Документация
 
-```js
-window.initStatistic();
-window.statisticTest(document.getElementById("statistics-widget"));
-```
+- `docs/01-overview.md`
+- `docs/02-architecture.md`
+- `docs/03-api.md`
+- `docs/06-development-workflow.md`
